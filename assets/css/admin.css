@@ -1,0 +1,320 @@
+/* Main Admin Styles */
+
+/* Students List Styles */
+.wp-list-table.students .column-mobile {
+    width: 25%;
+}
+
+.wp-list-table.students .column-status {
+    width: 10%;
+}
+
+.wp-list-table.students .column-classes {
+    width: 20%;
+}
+
+.wp-list-table.students .column-date_created,
+.wp-list-table.students .column-expiry_date {
+    width: 15%;
+}
+
+/* Status indicators */
+.smp-status-active,
+.smp-status-inactive {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.smp-status-active {
+    background: #e6f7e6;
+    color: #1e8e3e;
+}
+
+.smp-status-inactive {
+    background: #f8e8e8;
+    color: #d63638;
+}
+
+/* Mobile column styling */
+.column-mobile strong {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+
+.column-mobile .description {
+    display: block;
+    color: #646970;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+/* Promo code styling */
+.column-promo_code code {
+    background: #f0f0f1;
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-family: monospace;
+    font-size: 12px;
+}
+
+/* Responsive table */
+@media screen and (max-width: 782px) {
+    .wp-list-table.students .column-mobile {
+        width: 100%;
+    }
+    
+    .wp-list-table.students .column-mobile .row-actions {
+        left: 0;
+        margin-top: 8px;
+    }
+}
+
+/* End Students List Styles */
+
+.smp-dashboard-widgets {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.smp-widget {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+    padding: 15px;
+    border-radius: 3px;
+}
+
+.smp-widget h2 {
+    margin: 0 0 15px 0;
+    padding: 0;
+    font-size: 1.3em;
+}
+
+.smp-widget h3 {
+    margin: 0 0 15px 0;
+    padding: 0 0 10px 0;
+    border-bottom: 1px solid #f0f0f1;
+    font-size: 1.1em;
+}
+
+.smp-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.smp-stat {
+    text-align: center;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 3px;
+    flex: 1;
+    min-width: 100px;
+}
+
+.smp-stat .dashicons {
+    display: block;
+    font-size: 30px;
+    width: 30px;
+    height: 30px;
+    margin: 0 auto 10px;
+    color: #2271b1;
+}
+
+.smp-stat strong {
+    display: block;
+    font-size: 1.5em;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.smp-stat span {
+    font-size: 0.9em;
+    color: #646970;
+}
+
+/* Tables */
+.smp-table,
+.wp-list-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+.smp-table th,
+.smp-table td,
+.wp-list-table th,
+.wp-list-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #f0f0f1;
+    vertical-align: middle;
+}
+
+.smp-table th,
+.wp-list-table th {
+    background: #f6f7f7;
+    font-weight: 600;
+    color: #1d2327;
+    border-bottom: 1px solid #c3c4c7;
+}
+
+.wp-list-table thead td.check-column,
+.wp-list-table thead th.check-column {
+    padding: 12px 0 12px 3px;
+}
+
+.wp-list-table tbody tr:hover {
+    background-color: #f6f7f7;
+}
+
+.wp-list-table .column-cb {
+    width: 2.2em;
+}
+
+.wp-list-table .column-status {
+    width: 80px;
+}
+
+.wp-list-table .column-date_created {
+    width: 120px;
+}
+
+/* Status indicators */
+.smp-status-active {
+    color: #00a32a;
+    font-weight: 600;
+}
+
+.smp-status-inactive {
+    color: #d63638;
+    font-weight: 600;
+}
+
+/* Responsive tables */
+@media screen and (max-width: 782px) {
+    .wp-list-table thead {
+        display: none;
+    }
+    
+    .wp-list-table tbody tr {
+        display: block;
+        margin-bottom: 1em;
+        border: 1px solid #ccd0d4;
+    }
+    
+    .wp-list-table tbody td {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        text-align: right;
+        padding: 10px 15px;
+        border-bottom: 1px solid #f0f0f1;
+    }
+    
+    .wp-list-table tbody td:before {
+        content: attr(data-colname);
+        font-weight: 600;
+        margin-right: 10px;
+        float: left;
+        text-transform: capitalize;
+    }
+    
+    .wp-list-table tbody td.column-cb {
+        display: table-cell;
+        text-align: left;
+        padding: 1em 0 1em 1em;
+    }
+    
+    .wp-list-table tbody td.column-cb:before {
+        display: none;
+    }
+}
+
+/* Forms */
+.smp-form-table th {
+    width: 200px;
+    padding: 20px 10px 20px 0;
+}
+
+.smp-form-table td {
+    padding: 15px 10px;
+}
+
+.smp-form-table input[type="text"],
+.smp-form-table input[type="email"],
+.smp-form-table input[type="password"],
+.smp-form-table input[type="number"],
+.smp-form-table select,
+.smp-form-table textarea {
+    width: 100%;
+    max-width: 400px;
+}
+
+/* Buttons */
+.smp-button {
+    display: inline-block;
+    text-decoration: none;
+    font-size: 13px;
+    line-height: 2.15384615;
+    min-height: 30px;
+    margin: 0;
+    padding: 0 10px;
+    cursor: pointer;
+    border-width: 1px;
+    border-style: solid;
+    border-radius: 3px;
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+
+.smp-button-primary {
+    background: #2271b1;
+    border-color: #2271b1;
+    color: #fff;
+    text-decoration: none;
+    text-shadow: none;
+}
+
+.smp-button-primary:hover {
+    background: #135e96;
+    border-color: #135e96;
+    color: #fff;
+}
+
+/* Notices */
+.smp-notice {
+    margin: 15px 0;
+    padding: 10px 15px;
+}
+
+/* Responsive */
+@media screen and (max-width: 782px) {
+    .smp-stats {
+        flex-direction: column;
+    }
+    
+    .smp-stat {
+        width: 100%;
+    }
+    
+    .smp-form-table input[type="text"],
+    .smp-form-table input[type="email"],
+    .smp-form-table input[type="password"],
+    .smp-form-table input[type="number"],
+    .smp-form-table select,
+    .smp-form-table textarea {
+        max-width: 100%;
+    }
+}
