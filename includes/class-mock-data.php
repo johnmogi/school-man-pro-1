@@ -130,42 +130,96 @@ class MockData {
         $student_ids = [];
         $first_names = ['Noam', 'Yael', 'Amit', 'Tamar', 'Ethan', 'Leah', 'Daniel', 'Rivka', 'Avi', 'Miriam'];
         $last_names = ['Cohen', 'Levi', 'Mizrahi', 'Peretz', 'Azulai', 'Friedman', 'Goldberg', 'Katz', 'Rabin', 'Weiss'];
+        $promo_codes = ['WELCOME2023', 'STUDENT25', 'EARLYBIRD', 'REFER5', null, null, null]; // 3/7 chance of having a promo code
+        
+        error_log('School Manager Pro: Starting to generate ' . $count . ' students');
+        
+        // First, check if the table exists
+        $table_name = $this->wpdb->prefix . 'edc_school_students';
+        $table_exists = $this->wpdb->get_var("SHOW TABLES LIKE '{$table_name}'") === $table_name;
+        
+        if (!$table_exists) {
+            error_log("School Manager Pro: ERROR - Table {$table_name} does not exist!");
+            return [];
+        }
+        
+        // Check table structure
+        $columns = $this->wpdb->get_results("SHOW COLUMNS FROM `{$table_name}`");
+        $column_names = array_map(function($col) { return $col->Field; }, $columns);
+        error_log('School Manager Pro: Table columns: ' . implode(', ', $column_names));
         
         for ($i = 0; $i < $count; $i++) {
-            $first_name = $first_names[array_rand($first_names)];
-            $last_name = $last_names[array_rand($last_names)];
-            $mobile = '05' . rand(20, 59) . rand(100000, 999999);
-            
-            $username = strtolower($first_name . $last_name . ($i + 1));
-            $email = strtolower($first_name . '.' . $last_name . ($i + 1) . '@example.com');
-            $password = wp_hash_password('student123');
-            
-            $data = [
-                'first_name' => $first_name,
-                'last_name' => $last_name,
-                'email' => $email,
-                'username' => $username,
-                'password' => $password,
-                'phone' => $mobile,
-                'student_id_number' => 'STU' . str_pad($i + 1, 4, '0', STR_PAD_LEFT),
-                'status' => 'active',
-                'created_at' => current_time('mysql'),
-                'updated_at' => current_time('mysql')
-            ];
-            
-            // Add some optional fields for variety
-            if (rand(0, 1)) {
-                $cities = ['Jerusalem', 'Tel Aviv', 'Haifa', 'Beer Sheva', 'Eilat', 'Netanya'];
-                $data['city'] = $cities[array_rand($cities)];
-                $data['date_of_birth'] = date('Y-m-d', strtotime('-' . rand(18, 25) . ' years'));
+            try {
+                // Generate random but unique mobile number
+                $attempts = 0;
+                do {
+                    $mobile = '05' . rand(20, 59) . rand(100000, 999999);
+                    $exists = $this->wpdb->get_var($this->wpdb->prepare(
+                        "SELECT id FROM `{$table_name}` WHERE mobile = %s",
+                        $mobile
+                    ));
+                    $attempts++;
+                    if ($attempts > 10) {
+                        error_log("School Manager Pro: Failed to generate unique mobile after 10 attempts");
+                        continue 2; // Skip to next student
+                    }
+                } while ($exists);
+                
+                $first_name = $first_names[array_rand($first_names)];
+                $last_name = $last_names[array_rand($last_names)];
+                $promo_code = $promo_codes[array_rand($promo_codes)];
+                
+                // Generate student data matching the actual schema
+                $data = [
+                    'first_name' => $first_name,
+                    'last_name' => $last_name,
+                    'mobile' => $mobile,
+                    'password' => wp_hash_password('student123'),
+                    'promo_code' => $promo_code,
+                    'is_active' => 1, // Active by default
+                    'created_at' => current_time('mysql'),
+                    'updated_at' => current_time('mysql'),
+                    'expiry_date' => date('Y-06-30 23:59:59', strtotime('+1 year')) // Next June 30th
+                ];
+                
+                // Log the data we're about to insert for debugging
+                error_log('School Manager Pro: Attempting to insert student data: ' . print_r($data, true));
+                
+                // Insert the student
+                $result = $this->wpdb->insert($table_name, $data);
+                
+                if ($result === false) {
+                    $error = $this->wpdb->last_error;
+                    $query = $this->wpdb->last_query;
+                    error_log("School Manager Pro: Failed to insert student - Error: {$error}");
+                    error_log("School Manager Pro: Failed query: {$query}");
+                    
+                    // Try to get more detailed error information
+                    $mysql_error = $this->wpdb->last_error;
+                    $mysql_errno = $this->wpdb->last_error_no;
+                    error_log("School Manager Pro: MySQL Error #{$mysql_errno}: {$mysql_error}");
+                } else {
+                    $student_id = $this->wpdb->insert_id;
+                    $student_ids[] = $student_id;
+                    error_log("School Manager Pro: Successfully inserted student with ID: {$student_id}");
+                }
+            } catch (Exception $e) {
+                error_log("School Manager Pro: Exception while generating student: " . $e->getMessage());
+                error_log("Stack trace: " . $e->getTraceAsString());
             }
             
-            $this->wpdb->insert(
+            $result = $this->wpdb->insert(
                 $this->wpdb->prefix . 'edc_school_students',
                 $data
             );
             
-            $student_ids[] = $this->wpdb->insert_id;
+            if ($result === false) {
+                error_log('School Manager Pro: Failed to insert student - ' . $this->wpdb->last_error);
+                error_log('School Manager Pro: Data being inserted: ' . print_r($data, true));
+            } else {
+                $student_ids[] = $this->wpdb->insert_id;
+                error_log('School Manager Pro: Successfully inserted student with ID: ' . $this->wpdb->insert_id);
+            }
         }
         
         return $student_ids;

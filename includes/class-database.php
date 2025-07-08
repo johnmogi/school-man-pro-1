@@ -12,7 +12,7 @@ class Database {
     /**
      * Table prefix
      */
-    private $prefix = 'edc_school_';
+    private $prefix = 'wp_edc_school_';
 
     /**
      * Constructor

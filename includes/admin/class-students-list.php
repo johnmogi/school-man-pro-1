@@ -34,14 +34,14 @@ class Students_List extends WP_List_Table {
      */
     public function get_columns() {
         $columns = [
-            'cb'            => '<input type="checkbox" />',
-            'student_code'  => __('Student Code', 'school-manager-pro'),
-            'first_name'    => __('First Name', 'school-manager-pro'),
-            'last_name'     => __('Last Name', 'school-manager-pro'),
-            'email'         => __('Email', 'school-manager-pro'),
-            'mobile'        => __('Mobile', 'school-manager-pro'),
-            'status'        => __('Status', 'school-manager-pro'),
-            'date_created'  => __('Date Created', 'school-manager-pro'),
+            'cb'                => '<input type="checkbox" />',
+            'student_id_number' => __('Student ID', 'school-manager-pro'),
+            'first_name'        => __('First Name', 'school-manager-pro'),
+            'last_name'         => __('Last Name', 'school-manager-pro'),
+            'email'             => __('Email', 'school-manager-pro'),
+            'phone'             => __('Phone', 'school-manager-pro'),
+            'status'            => __('Status', 'school-manager-pro'),
+            'created_at'        => __('Date Created', 'school-manager-pro'),
         ];
         
         return $columns;
@@ -52,13 +52,13 @@ class Students_List extends WP_List_Table {
      */
     public function get_sortable_columns() {
         return [
-            'student_code'  => ['student_code', false],
-            'first_name'    => ['first_name', false],
-            'last_name'     => ['last_name', false],
-            'email'         => ['email', false],
-            'mobile'        => ['mobile', false],
-            'status'        => ['status', false],
-            'date_created'  => ['date_created', true],
+            'student_id_number' => ['student_id_number', true],
+            'first_name'        => ['first_name', false],
+            'last_name'         => ['last_name', false],
+            'email'             => ['email', false],
+            'phone'             => ['phone', false],
+            'status'            => ['status', false],
+            'created_at'        => ['created_at', true],
         ];
     }
     
@@ -165,7 +165,7 @@ class Students_List extends WP_List_Table {
     /**
      * Column - Student Code (primary identifier)
      */
-    public function column_student_code($item) {
+    public function column_student_id_number($item) {
         $edit_url = add_query_arg([
             'page'   => 'school-manager-students',
             'action' => 'edit',
@@ -195,7 +195,7 @@ class Students_List extends WP_List_Table {
         return sprintf(
             '<strong><a href="%1$s">%2$s</a></strong>%3$s',
             esc_url($edit_url),
-            esc_html($item->student_code),
+            esc_html($item->student_id_number),
             $this->row_actions($actions)
         );
     }
@@ -229,20 +229,44 @@ class Students_List extends WP_List_Table {
     }
     
     /**
+     * Column - Status
+     */
+    public function column_status($item) {
+        $status = isset($item->status) ? $item->status : 'active';
+        $statuses = [
+            'active'     => __('Active', 'school-manager-pro'),
+            'inactive'   => __('Inactive', 'school-manager-pro'),
+            'suspended'  => __('Suspended', 'school-manager-pro'),
+        ];
+        
+        $status_label = isset($statuses[$status]) ? $statuses[$status] : ucfirst($status);
+        $status_class = 'status-' . esc_attr($status);
+        
+        return sprintf(
+            '<span class="%s">%s</span>',
+            $status_class,
+            esc_html($status_label)
+        );
+    }
+    
+    /**
      * Column - Default
      */
     public function column_default($item, $column_name) {
+        // Handle custom column output
         switch ($column_name) {
-            case 'date_created':
-                return !empty($item->$column_name) ? date_i18n(get_option('date_format'), strtotime($item->$column_name)) : '—';
+            case 'student_id_number':
+            case 'first_name':
+            case 'last_name':
+            case 'email':
+            case 'phone':
+            case 'created_at':
+                return isset($item->$column_name) ? esc_html($item->$column_name) : '-';
             case 'status':
-                $status = isset($item->$column_name) ? $item->$column_name : 'inactive';
-                $status_label = $status === 'active' ? 
-                    '<span class="status-active">' . __('Active', 'school-manager-pro') . '</span>' : 
-                    '<span class="status-inactive">' . __('Inactive', 'school-manager-pro') . '</span>';
-                return $status_label;
+                return $this->column_status($item);
             default:
-                return isset($item->$column_name) ? esc_html($item->$column_name) : '—';
+                // For any custom columns added via filters
+                return apply_filters('smp_students_column_content', '', $column_name, $item);
         }
     }
     
@@ -280,32 +304,24 @@ class Students_List extends WP_List_Table {
      */
     public function prepare_items() {
         global $wpdb;
-        
-        // Set table name
         $table_name = $wpdb->prefix . 'edc_school_students';
         
-        // Debug: Log the current action and table name
-        error_log('School Manager Pro: prepare_items() called for table: ' . $table_name);
+        // Debug: Log table name and check if it exists
+        error_log('School Manager Pro: Preparing items for table: ' . $table_name);
         
-        // Debug: Log the current user and capabilities
-        $current_user = wp_get_current_user();
-        error_log('School Manager Pro: Current user: ' . $current_user->user_login);
-        error_log('School Manager Pro: User capabilities: ' . print_r($current_user->allcaps, true));
-        
-        // Debug: Check if table exists
+        // Check if the table exists
         $table_exists = $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table_name)) === $table_name;
         
         if (!$table_exists) {
-            error_log('School Manager Pro: Table ' . $table_name . ' does not exist');
+            error_log('School Manager Pro: Table does not exist: ' . $table_name);
             $this->items = [];
             return;
         }
         
-        // Get table structure
+        // Get the actual columns from the database
         $columns = $wpdb->get_results("SHOW COLUMNS FROM $table_name", ARRAY_A);
         $column_names = array_column($columns, 'Field');
-        
-        // Debug: Log table structure and check for required columns
+        error_log('School Manager Pro: Actual columns in table: ' . print_r($column_names, true));
         error_log('School Manager Pro: Table structure: ' . print_r($columns, true));
         
         // Check for required columns
@@ -358,7 +374,7 @@ class Students_List extends WP_List_Table {
         error_log('School Manager Pro: Column headers: ' . print_r($this->_column_headers, true));
         
         // Debug: Check for missing columns
-        $expected_columns = ['id', 'student_code', 'first_name', 'last_name', 'email', 'mobile', 'status', 'date_created'];
+        $expected_columns = array_keys($columns);
         $missing_columns = array_diff($expected_columns, $column_names);
         if (!empty($missing_columns)) {
             error_log('School Manager Pro: WARNING - Missing expected columns: ' . implode(', ', $missing_columns));
@@ -374,8 +390,8 @@ class Students_List extends WP_List_Table {
         
         // Handle status filter
         if (isset($_REQUEST['status']) && in_array($_REQUEST['status'], ['active', 'inactive'])) {
-            $status = sanitize_text_field($_REQUEST['status']);
-            $query_where[] = $wpdb->prepare('status = %s', $status);
+            $status = sanitize_text_field($_REQUEST['status']) === 'active' ? 1 : 0;
+            $query_where[] = $wpdb->prepare('is_active = %d', $status);
         }
         
         // Get search string
@@ -405,7 +421,7 @@ class Students_List extends WP_List_Table {
         // Add search conditions - using actual column names from the table
         if (!empty($search)) {
             $search_conditions = [];
-            $search_columns = ['student_code', 'first_name', 'last_name', 'email', 'mobile', 'city'];
+            $search_columns = ['id', 'first_name', 'last_name', 'mobile', 'promo_code'];
             
             foreach ($search_columns as $column) {
                 if (in_array($column, $column_names)) {
