@@ -286,4 +286,4 @@ dev plan
 - [ ] Verify admin lists display all required fields
 
 ## Current Goal
-Verify admin lists display generated mock data
+Verify admin lists display generated mock data# lilacschool1
