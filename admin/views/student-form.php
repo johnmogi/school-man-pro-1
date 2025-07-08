@@ -11,7 +11,7 @@ $student = null;
 
 if ($is_edit) {
     $student = $wpdb->get_row($wpdb->prepare(
-        "SELECT * FROM {$wpdb->prefix}smp_students WHERE id = %d",
+        "SELECT * FROM {$wpdb->prefix}edc_school_students WHERE id = %d",
         $student_id
     ));
     
@@ -31,7 +31,7 @@ $promo_code = $student->promo_code ?? '';
 // Get all active classes for the dropdown
 $classes = $wpdb->get_results(
     "SELECT id, name 
-     FROM {$wpdb->prefix}smp_classes 
+     FROM {$wpdb->prefix}edc_school_classes 
      WHERE status = 'active'
      ORDER BY name"
 );
@@ -41,7 +41,7 @@ $student_classes = [];
 if ($is_edit) {
     $student_classes = $wpdb->get_col($wpdb->prepare(
         "SELECT class_id 
-         FROM {$wpdb->prefix}smp_class_students 
+         FROM {$wpdb->prefix}edc_school_class_students 
          WHERE student_id = %d",
         $student_id
     ));
@@ -52,7 +52,7 @@ if ($is_edit) {
     <h1 class="wp-heading-inline">
         <?php echo $is_edit ? __('Edit Student', 'school-manager-pro') : __('Add New Student', 'school-manager-pro'); ?>
     </h1>
-    <a href="?page=smp-students" class="page-title-action"><?php _e('Back to Students', 'school-manager-pro'); ?></a>
+    <a href="?page=school-manager-students" class="page-title-action"><?php _e('Back to Students', 'school-manager-pro'); ?></a>
     
     <hr class="wp-header-end">
     
@@ -178,7 +178,7 @@ if ($is_edit) {
                         <div class="inside">
                             <p class="submit">
                                 <input type="submit" name="submit" id="submit" class="button button-primary" value="<?php echo $is_edit ? __('Update Student', 'school-manager-pro') : __('Add Student', 'school-manager-pro'); ?>">
-                                <a href="?page=smp-students" class="button button-secondary"><?php _e('Cancel', 'school-manager-pro'); ?></a>
+                                <a href="?page=school-manager-students" class="button button-secondary"><?php _e('Cancel', 'school-manager-pro'); ?></a>
                             </p>
                         </div>
                     </div>

@@ -113,7 +113,7 @@ class Admin {
             __('Students', 'school-manager-pro'),
             __('Students', 'school-manager-pro'),
             'manage_options',
-            'smp-students',
+            'school-manager-students',
             [$this, 'render_students_page']
         );
         

@@ -143,7 +143,7 @@ class Students_List extends WP_List_Table {
         global $wpdb;
         
         // Get all active classes for the filter dropdown
-        $classes = $wpdb->get_results("SELECT id, name FROM {$wpdb->prefix}smp_classes WHERE status = 'active' ORDER BY name");
+        $classes = $wpdb->get_results("SELECT id, name FROM {$wpdb->prefix}edc_school_classes WHERE status = 'active' ORDER BY name");
         $current_class = isset($_REQUEST['class_id']) ? absint($_REQUEST['class_id']) : '';
         
         if (!empty($classes)) :
@@ -160,6 +160,27 @@ class Students_List extends WP_List_Table {
             </div>
             <?php
         endif;
+    }
+    
+    /**
+     * Add the "Add New" button to the page header
+     */
+    public function display_tablenav($which) {
+        if ('top' === $which) {
+            $add_new_url = add_query_arg([
+                'page'   => 'school-manager-students',
+                'action' => 'add'
+            ], admin_url('admin.php'));
+            
+            echo '<div class="tablenav ' . esc_attr($which) . '">';
+            echo '<div class="alignleft actions">';
+            echo '<a href="' . esc_url($add_new_url) . '" class="button button-primary">' . __('Add New', 'school-manager-pro') . '</a>';
+            echo '</div>';
+            parent::display_tablenav($which);
+            echo '</div>';
+        } else {
+            parent::display_tablenav($which);
+        }
     }
     
     /**
@@ -182,9 +203,10 @@ class Students_List extends WP_List_Table {
                 '<a href="%s" onclick="return confirm(\'%s\')">%s</a>',
                 wp_nonce_url(
                     add_query_arg([
+                        'page' => 'school-manager-students',
                         'action' => 'delete',
                         'student' => $item->id
-                    ]),
+                    ], admin_url('admin.php')),
                     'delete-student_' . $item->id
                 ),
                 esc_js(__('Are you sure you want to delete this student?', 'school-manager-pro')),
@@ -325,7 +347,7 @@ class Students_List extends WP_List_Table {
         error_log('School Manager Pro: Table structure: ' . print_r($columns, true));
         
         // Check for required columns
-        $required_columns = ['id', 'student_code', 'first_name', 'last_name', 'email', 'mobile', 'status', 'date_created'];
+        $required_columns = ['id', 'student_id_number', 'first_name', 'last_name', 'email', 'phone', 'status', 'created_at'];
         $missing_columns = array_diff($required_columns, $column_names);
         
         if (!empty($missing_columns)) {
@@ -390,8 +412,8 @@ class Students_List extends WP_List_Table {
         
         // Handle status filter
         if (isset($_REQUEST['status']) && in_array($_REQUEST['status'], ['active', 'inactive'])) {
-            $status = sanitize_text_field($_REQUEST['status']) === 'active' ? 1 : 0;
-            $query_where[] = $wpdb->prepare('is_active = %d', $status);
+            $status = sanitize_text_field($_REQUEST['status']);
+            $query_where[] = $wpdb->prepare('status = %s', $status);
         }
         
         // Get search string

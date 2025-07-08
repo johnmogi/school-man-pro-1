@@ -40,13 +40,17 @@ class Students {
     /**
      * Add menu page
      */
+    
+    /**
+     * Add menu page
+     */
     public function add_menu_page() {
         $hook = add_submenu_page(
             'school-manager-pro',
             __('Students', 'school-manager-pro'),
             __('Students', 'school-manager-pro'),
             'manage_options',
-            'smp-students',
+            'school-manager-students',
             [$this, 'render_page']
         );
         
@@ -82,14 +86,21 @@ class Students {
     public function enqueue_scripts($hook) {
         global $wp_scripts;
         
-        // Only enqueue on our admin page
-        if ('school-manager_page_smp-students' !== $hook) {
-            return;
+        // Check both the old and new page hooks since there might be inconsistencies
+        $valid_hooks = array(
+            'school-manager_page_school-manager-students',
+            'school-manager-pro_page_school-manager-students',
+            'toplevel_page_school-manager-students'
+        );
+        
+        // Debug hook information
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Current hook: ' . $hook);
+            error_log('Screen ID: ' . (get_current_screen() ? get_current_screen()->id : 'unknown'));
         }
         
-        // Make sure we have the correct screen object
-        $screen = get_current_screen();
-        if (!$screen || 'school-manager_page_smp-students' !== $screen->id) {
+        // Adjust the condition to be more flexible with different hook formats
+        if (!in_array($hook, $valid_hooks) && strpos($hook, 'school-manager-students') === false) {
             return;
         }
         
@@ -97,6 +108,15 @@ class Students {
         wp_enqueue_script('jquery');
         wp_enqueue_script('jquery-ui-core');
         wp_enqueue_script('jquery-ui-datepicker');
+        
+        // Enqueue our custom admin script to fix the "New" button refresh issue
+        wp_enqueue_script(
+            'smp-admin-js',
+            plugin_dir_url(dirname(__FILE__)) . 'admin/js/smp-admin.js',
+            array('jquery'),
+            '1.0.0',
+            true
+        );
         
         // Get the jQuery UI version
         $jquery_ui_version = isset($wp_scripts->registered['jquery-ui-core']->ver) 
@@ -172,7 +192,7 @@ class Students {
         switch ($action) {
             case 'add':
             case 'edit':
-                $this->render_edit_form();
+                $this->render_student_form();
                 break;
             case 'import':
                 $this->render_import_form();
@@ -257,7 +277,7 @@ class Students {
                             __('Need a template? %s', 'school-manager-pro'),
                             sprintf(
                                 '<a href="%s">%s</a>',
-                                esc_url(wp_nonce_url(admin_url('admin.php?page=smp-students&smp_download_template=students'), 'smp_download_template_students')),
+                                esc_url(wp_nonce_url(admin_url('admin.php?page=school-manager-students&smp_download_template=students'), 'smp_download_template_students')),
                                 esc_html__('Download the CSV template', 'school-manager-pro')
                             )
                         );
@@ -305,7 +325,7 @@ class Students {
                         </table>
                         
                         <?php submit_button(__('Import Students', 'school-manager-pro'), 'primary', 'submit', false); ?>
-                        <a href="<?php echo esc_url(admin_url('admin.php?page=smp-students')); ?>" class="button">
+                        <a href="<?php echo esc_url(admin_url('admin.php?page=school-manager-students')); ?>" class="button">
                             <?php esc_html_e('Cancel', 'school-manager-pro'); ?>
                         </a>
                     </form>
@@ -323,16 +343,16 @@ class Students {
         ?>
         <div class="wrap">
             <h1 class="wp-heading-inline"><?php echo esc_html(get_admin_page_title()); ?></h1>
-            <a href="<?php echo esc_url(admin_url('admin.php?page=smp-students&action=add')); ?>" class="page-title-action">
+            <a href="<?php echo esc_url(admin_url('admin.php?page=school-manager-students&action=add')); ?>" class="page-title-action">
                 <?php esc_html_e('Add New', 'school-manager-pro'); ?>
             </a>
-            <a href="<?php echo esc_url(admin_url('admin.php?page=smp-students&action=import')); ?>" class="page-title-action">
+            <a href="<?php echo esc_url(admin_url('admin.php?page=school-manager-students&action=import')); ?>" class="page-title-action">
                 <?php esc_html_e('Import', 'school-manager-pro'); ?>
             </a>
-            <a href="<?php echo esc_url(wp_nonce_url(admin_url('admin.php?page=smp-students&smp_export=students'), 'smp_export_students')); ?>" class="page-title-action">
+            <a href="<?php echo esc_url(wp_nonce_url(admin_url('admin.php?page=school-manager-students&smp_export=students'), 'smp_export_students')); ?>" class="page-title-action">
                 <?php esc_html_e('Export', 'school-manager-pro'); ?>
             </a>
-            <a href="<?php echo esc_url(wp_nonce_url(admin_url('admin.php?page=smp-students&smp_download_template=students'), 'smp_download_template_students')); ?>" class="page-title-action">
+            <a href="<?php echo esc_url(wp_nonce_url(admin_url('admin.php?page=school-manager-students&smp_download_template=students'), 'smp_download_template_students')); ?>" class="page-title-action">
                 <?php esc_html_e('Download Template', 'school-manager-pro'); ?>
             </a>
             <hr class="wp-header-end">
@@ -350,7 +370,7 @@ class Students {
             <div class="smp-import-export-options" style="margin-top: 20px; padding: 10px; background: #fff; border: 1px solid #ccd0d4; border-radius: 4px;">
                 <h3><?php esc_html_e('Export Options', 'school-manager-pro'); ?></h3>
                 <form method="get" action="" id="smp-export-form">
-                    <input type="hidden" name="page" value="smp-students" />
+                    <input type="hidden" name="page" value="school-manager-students" />
                     <input type="hidden" name="smp_export" value="students" />
                     <?php wp_nonce_field('smp_export_students'); ?>
                     
@@ -501,7 +521,7 @@ class Students {
         
         // Check for duplicate email
         $email_exists = $wpdb->get_var($wpdb->prepare(
-            "SELECT id FROM {$wpdb->prefix}smp_students WHERE email = %s AND id != %d",
+            "SELECT id FROM {$wpdb->prefix}edc_school_students WHERE email = %s AND id != %d",
             $email,
             $student_id
         ));
@@ -512,7 +532,7 @@ class Students {
         
         // Check for duplicate mobile (username)
         $mobile_exists = $wpdb->get_var($wpdb->prepare(
-            "SELECT id FROM {$wpdb->prefix}smp_students WHERE mobile = %s AND id != %d",
+            "SELECT id FROM {$wpdb->prefix}edc_school_students WHERE mobile = %s AND id != %d",
             $mobile,
             $student_id
         ));
@@ -526,7 +546,7 @@ class Students {
             foreach ($errors as $error) {
                 $this->add_notice($error, 'error');
             }
-            wp_redirect(add_query_arg(['action' => $student_id ? 'edit' : 'add', 'id' => $student_id], 'admin.php?page=smp-students'));
+            wp_redirect(add_query_arg(['action' => $student_id ? 'edit' : 'add', 'id' => $student_id], 'admin.php?page=school-manager-students'));
             exit;
         }
         
@@ -549,7 +569,7 @@ class Students {
         if ($student_id) {
             // Update existing student
             $wpdb->update(
-                $wpdb->prefix . 'smp_students',
+                $wpdb->prefix . 'edc_school_students',
                 $student_data,
                 ['id' => $student_id],
                 ['%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s'],
@@ -560,7 +580,7 @@ class Students {
             // Add new student
             $student_data['created_at'] = current_time('mysql');
             $wpdb->insert(
-                $wpdb->prefix . 'smp_students',
+                $wpdb->prefix . 'edc_school_students',
                 $student_data,
                 ['%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s']
             );
@@ -572,7 +592,7 @@ class Students {
         if ($student_id) {
             // Remove existing class enrollments
             $wpdb->delete(
-                $wpdb->prefix . 'smp_class_students',
+                $wpdb->prefix . 'edc_school_class_students',
                 ['student_id' => $student_id],
                 ['%d']
             );
@@ -580,7 +600,7 @@ class Students {
             // Add new class enrollments
             foreach ($classes as $class_id) {
                 $wpdb->insert(
-                    $wpdb->prefix . 'smp_class_students',
+                    $wpdb->prefix . 'edc_school_class_students',
                     [
                         'class_id' => $class_id,
                         'student_id' => $student_id,
@@ -595,7 +615,7 @@ class Students {
         }
         
         $this->add_notice($message, 'success');
-        wp_redirect('admin.php?page=smp-students');
+        wp_redirect('admin.php?page=school-manager-students');
         exit;
     }
     
@@ -618,14 +638,14 @@ class Students {
         if ($student_id) {
             // Delete student from classes
             $wpdb->delete(
-                $wpdb->prefix . 'smp_class_students',
+                $wpdb->prefix . 'edc_school_class_students',
                 ['student_id' => $student_id],
                 ['%d']
             );
             
             // Delete the student
             $wpdb->delete(
-                $wpdb->prefix . 'smp_students',
+                $wpdb->prefix . 'edc_school_students',
                 ['id' => $student_id],
                 ['%d']
             );
@@ -633,7 +653,7 @@ class Students {
             $this->add_notice(__('Student deleted successfully.', 'school-manager-pro'), 'success');
         }
         
-        wp_redirect('admin.php?page=smp-students');
+        wp_redirect('admin.php?page=school-manager-students');
         exit;
     }
     
